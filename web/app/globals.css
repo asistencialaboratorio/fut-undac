@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0f4fb;
+  --foreground: #0f172a;
+}
+
+/* Paleta exacta de la GUI de escritorio (gui.py) — mismos nombres/valores
+   que las constantes SB_*, BG_*, C_*, T_*, B_* de ese archivo, para que la
+   web se vea igual al sistema original. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-sb-bg: #0a1628;
+  --color-sb-hover: #162040;
+  --color-sb-active: #1e3560;
+  --color-sb-border: #1a2e50;
+  --color-sb-text: #8aa4c8;
+  --color-sb-text-act: #ffffff;
+  --color-sb-accent: #c9a227;
+
+  --color-bg-main: #f0f4fb;
+  --color-bg-card: #ffffff;
+  --color-bg-input: #f8faff;
+  --color-bg-header: #ffffff;
+
+  --color-azul: #1a56db;
+  --color-azul-h: #1343b0;
+  --color-azul-osc: #003087;
+  --color-dorado: #c9a227;
+  --color-dorado-h: #a88020;
+  --color-verde: #057a55;
+  --color-verde-bg: #ecfdf5;
+  --color-rojo: #dc2626;
+  --color-rojo-bg: #fef2f2;
+  --color-naranja: #d97706;
+  --color-naranja-bg: #fffbeb;
+
+  --color-titulo: #0f172a;
+  --color-cuerpo: #374151;
+  --color-suave: #6b7280;
+  --color-hint: #9ca3af;
+  --color-borde: #e5e7eb;
+  --color-borde-focus: #1a56db;
+  --color-borde-card: #e8edf5;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}

@@ -23,7 +23,7 @@ const KEYWORDS_EXTRA: Record<string, string[]> = {
   reserva_matricula: ["congelar", "pausar", "reservar"],
   rectificacion_notas: ["nota", "notas", "corregir", "equivocada"],
   carta_presentacion: ["practicas", "empresa"],
-  designacion_asesor_practicas: ["asesor", "practicas", "aceptacion", "aceptado"],
+  designacion_supervisor_practicas: ["supervisor", "asesor", "practicas", "aceptacion", "aceptado"],
   devolucion_documentos: ["devuelvan", "papeles", "documentos"],
   duplicado_carne: ["perdi", "carnet", "carne"],
   subsanacion_actas: ["acta", "actas"],

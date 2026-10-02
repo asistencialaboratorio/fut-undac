@@ -22,11 +22,12 @@ def main():
     codigo = sys.argv[1] if len(sys.argv) > 1 else "2304403050"
 
     print(f"Probando conexión a la API de UNDAC...")
-    print(f"URL base: {api_undac.BASE_URL}")
     print(f"Código de prueba: {codigo}")
     print("-" * 60)
 
     try:
+        from urllib.parse import urlparse
+        print(f"Servidor de la API: {urlparse(api_undac.base_url()).netloc}")
         info = api_undac.consultar_estudiante(codigo)
     except api_undac.APIError as e:
         print(f"\n✗ ERROR: {e}\n")
@@ -46,7 +47,8 @@ def main():
     print(f"  Domicilio:              {info['domicilio']}")
     print(f"  Fecha de ingreso:       {info['fecha_ingreso']}")
     print(f"  Currícula:              {info['curricula']}")
-    print(f"  Correo (¡OJO, es personal, NO institucional!): {info['correo_personal_detectado']}")
+    print(f"  Correo institucional:   {info['correo_institucional'] or '(no disponible)'}")
+    print(f"  Correo personal:        {info['correo_personal']}")
     print()
     print("Respuesta cruda de la API:")
     import json

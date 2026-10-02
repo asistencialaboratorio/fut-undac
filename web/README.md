@@ -12,17 +12,26 @@ este repositorio (`main.py`, `gui.py`).
 
 - **Wizard** (`components/Wizard.tsx`): selección de trámite, datos
   personales, fundamentación y vista previa, todo en el navegador.
+- **Vista previa A4 editable** (`components/FutDocument.tsx`): la hoja se
+  muestra a tamaño A4 fijo (se reduce proporcionalmente en pantallas
+  chicas) y cualquier texto se edita con un clic. Si el texto no cabe, la
+  letra se reduce sola hasta que entre en una hoja. Desde ahí se descarga
+  Word, PDF o se imprime, siempre con lo que se ve en la hoja. El PDF se
+  genera en el navegador (`lib/pdf-cliente.ts`, imagen de la hoja a alta
+  resolución); "Imprimir" usa el PDF vectorial del propio navegador.
 - **Autocompletado por código de matrícula**
-  (`app/api/consultar-estudiante/route.ts`): consulta la API
-  institucional de UNDAC desde el servidor (evita el bloqueo de
-  "contenido mixto" HTTP/HTTPS del navegador). Requiere la variable de
-  entorno `UNDAC_API_BASE_URL` — ver abajo. **Solo responde desde la red
-  institucional de UNDAC** (wifi del campus o VPN), así que fuera de esa
-  red este paso falla de forma controlada y el estudiante puede seguir
-  llenando los datos a mano.
+  (`app/api/consultar-estudiante/route.ts`, método `POST`): consulta la
+  API institucional de UNDAC desde el servidor, para que el token de la
+  URL no llegue al navegador. Completa nombre, DNI, correo institucional,
+  facultad, escuela y domicilio. Como la ruta es pública, limita a 10
+  consultas por IP cada 10 minutos.
+  Requiere la variable de entorno `UNDAC_API_BASE_URL` — ver abajo.
+  **Solo responde desde la red institucional de UNDAC** (wifi del campus
+  o VPN), así que fuera de esa red este paso falla de forma controlada y
+  el estudiante puede seguir llenando los datos a mano.
 - **Generación del documento** (`app/api/generar-docx/route.ts`): arma
-  el `.docx` en memoria con `python-docx`-equivalente en TypeScript
-  (`lib/docx-generator.ts`) y lo entrega directo para descargar. No se
+  el `.docx` en memoria (`lib/docx-generator.ts`) a partir del FUT ya
+  editado en la vista previa y lo entrega directo para descargar. No se
   guarda nada en el servidor.
 
 ## Requisitos

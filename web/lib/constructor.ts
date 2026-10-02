@@ -56,6 +56,10 @@ export function construirFut(claveTramite: string, datosUsuario: Record<string, 
   for (const opcional of tramite.camposExtraOpcionales ?? []) {
     if (!(opcional in contexto)) contexto[opcional] = "";
   }
+  // Nombre completo de la facultad ("Facultad de Ingeniería"), por si el
+  // usuario la escribió sin el prefijo "Facultad de".
+  const facultad = contexto.facultad.trim();
+  contexto.facultad_completa = !facultad || /^facultad\b/i.test(facultad) ? facultad : `Facultad de ${facultad}`;
   // Variante en mayúsculas de cada valor (ej. {campo_mayus}), para plantillas
   // de SOLICITO/SUMILLA que van en mayúsculas como título.
   for (const [clave, valor] of Object.entries(contexto)) {
@@ -86,6 +90,33 @@ export function construirFut(claveTramite: string, datosUsuario: Record<string, 
     extra: Object.fromEntries(tramite.camposExtra.map((c) => [c, datosUsuario[c] ?? ""])),
   };
 
+  return fut;
+}
+
+const CAMPOS_TEXTO = [
+  "tramiteClave", "tramiteNombre", "solicito", "sumilla", "destinatario",
+  "nombresApellidos", "cargoCentroTrabajo", "dni", "codigo", "celular", "correo",
+  "facultad", "escuela", "especialidad", "domicilio", "fundamentacion", "anexo", "fecha",
+] as const;
+
+const MAX_LARGO_CAMPO = 5000;
+
+// Valida un FUT recibido del navegador (ya editado por el usuario): solo
+// acepta los campos conocidos, todos de texto y de largo razonable.
+export function normalizarFut(crudo: unknown): FutData | null {
+  if (!crudo || typeof crudo !== "object") return null;
+  const origen = crudo as Record<string, unknown>;
+  const fut: FutData = {
+    tramiteClave: "", tramiteNombre: "", solicito: "", sumilla: "", destinatario: "",
+    nombresApellidos: "", cargoCentroTrabajo: "", dni: "", codigo: "", celular: "", correo: "",
+    facultad: "", escuela: "", especialidad: "", domicilio: "", fundamentacion: "", anexo: "",
+    fecha: "", extra: {},
+  };
+  for (const campo of CAMPOS_TEXTO) {
+    const valor = origen[campo];
+    if (typeof valor !== "string" || valor.length > MAX_LARGO_CAMPO) return null;
+    fut[campo] = valor;
+  }
   return fut;
 }
 

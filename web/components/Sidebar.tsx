@@ -9,7 +9,7 @@ const NAV_ITEMS = [
 
 export default function Sidebar({ onNav }: { onNav: (clave: string) => void }) {
   return (
-    <aside className="w-[220px] shrink-0 bg-sb-bg flex flex-col h-screen sticky top-0">
+    <aside className="w-[220px] shrink-0 bg-sb-bg hidden md:flex flex-col h-screen sticky top-0 print:hidden">
       <div className="flex items-center gap-2.5 px-4 py-5">
         <Image src="/img/undac_logo.jpg" alt="Logo UNDAC" width={40} height={47} className="rounded-sm" />
         <div>

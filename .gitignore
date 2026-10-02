@@ -6,6 +6,11 @@ output/
 # Claude Code local config
 .claude/
 
+# Secrets (el real va en .env; .env.example sí se publica)
+.env
+.env.*
+!.env.example
+
 # web/ (Next.js)
 web/node_modules/
 web/.next/

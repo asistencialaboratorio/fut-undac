@@ -1,26 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { construirFut } from "@/lib/constructor";
+import { normalizarFut } from "@/lib/constructor";
 import { generarDocxFut } from "@/lib/docx-generator";
 
 // No hay almacenamiento: el documento se genera en memoria por cada
-// solicitud y se entrega directo para descargar. Nada queda guardado en
-// el servidor.
+// solicitud y se entrega directo para descargar. Nada queda guardado en el
+// servidor. Recibe el FUT ya editado por el usuario en la vista previa.
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { claveTramite, datos, nombreArchivo } = body as {
-      claveTramite: string;
-      datos: Record<string, string>;
-      nombreArchivo?: string;
-    };
+    const body = (await request.json()) as { fut?: unknown; nombreArchivo?: unknown };
+    const fut = normalizarFut(body.fut);
 
-    if (!claveTramite || !datos) {
-      return NextResponse.json({ error: "Faltan datos del trámite." }, { status: 400 });
+    if (!fut) {
+      return NextResponse.json({ error: "Faltan datos del trámite o no son válidos." }, { status: 400 });
     }
 
-    const fut = construirFut(claveTramite, datos);
     const buffer = await generarDocxFut(fut);
-    const nombre = (nombreArchivo || `FUT_${claveTramite}`).replace(/[^a-zA-Z0-9_-]/g, "_");
+    const nombre = String(body.nombreArchivo || `FUT_${fut.tramiteClave}`)
+      .slice(0, 100)
+      .replace(/[^a-zA-Z0-9_-]/g, "_");
 
     return new NextResponse(new Uint8Array(buffer), {
       status: 200,

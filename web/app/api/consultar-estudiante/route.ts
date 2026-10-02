@@ -2,22 +2,46 @@ import { NextRequest, NextResponse } from "next/server";
 import { facultadDeEscuela } from "@/lib/facultades";
 
 // Proxy server-side a la API institucional de la UNDAC. Se hace desde el
-// servidor (no desde el navegador) porque la API solo responde por HTTP
-// (no HTTPS), lo que el navegador bloquearía como "contenido mixto" si
-// se llamara directo desde esta página HTTPS.
+// servidor (y no desde el navegador) para que el token que lleva la URL
+// de la API nunca llegue al cliente.
 //
-// OJO: el campo "Correo Institucional" que devuelve la API en realidad
-// trae el correo PERSONAL del estudiante (error conocido de la API), así
-// que nunca se usa automáticamente. Y "Programa facultad" es en realidad
-// el nombre de la ESCUELA, no de la facultad — se usa el catálogo local
-// para deducir la facultad real a partir de esa escuela.
+// "Programa facultad" es en realidad el nombre de la ESCUELA, no de la
+// facultad — se usa el catálogo local para deducir la facultad real a
+// partir de esa escuela. El "Correo Institucional" solo se usa si
+// realmente termina en @undac.edu.pe (antes la API traía ahí el personal).
+//
 // La URL completa (incluye tokens de acceso propios de la API) se toma de
 // una variable de entorno para no dejarla fija en el código público.
-// Configúrala en Vercel (Settings -> Environment Variables) o en
-// .env.local para desarrollo; ver .env.example.
+// Configúrala en Vercel/Netlify (Environment Variables) o en .env.local
+// para desarrollo; ver .env.example.
 const BASE_URL = process.env.UNDAC_API_BASE_URL;
 
-export async function GET(request: NextRequest) {
+// Esta ruta es pública y devuelve datos personales con solo el código, así
+// que se limitan las consultas por IP para frenar el barrido de códigos. El
+// contador vive en memoria de cada instancia serverless: no es un límite
+// exacto.
+const VENTANA_MS = 10 * 60 * 1000;
+const MAX_CONSULTAS = 10;
+const consultasPorIp = new Map<string, number[]>();
+
+function excedeLimite(ip: string): boolean {
+  const ahora = Date.now();
+  if (consultasPorIp.size > 5000) consultasPorIp.clear();
+  const recientes = (consultasPorIp.get(ip) ?? []).filter((t) => ahora - t < VENTANA_MS);
+  recientes.push(ahora);
+  consultasPorIp.set(ip, recientes);
+  return recientes.length > MAX_CONSULTAS;
+}
+
+function ipDelCliente(request: NextRequest): string {
+  return (
+    request.headers.get("x-nf-client-connection-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    "desconocida"
+  );
+}
+
+export async function POST(request: NextRequest) {
   if (!BASE_URL) {
     return NextResponse.json(
       { error: "El autocompletado por API no está configurado en este servidor (falta UNDAC_API_BASE_URL)." },
@@ -25,11 +49,24 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const codigo = (request.nextUrl.searchParams.get("codigo") || "").trim();
-
-  if (!/^\d+$/.test(codigo)) {
+  if (excedeLimite(ipDelCliente(request))) {
     return NextResponse.json(
-      { error: "El código de matrícula debe ser numérico para consultar la API." },
+      { error: "Demasiadas consultas. Espera unos minutos e inténtalo de nuevo." },
+      { status: 429 },
+    );
+  }
+
+  let body: { codigo?: unknown };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Solicitud no válida." }, { status: 400 });
+  }
+  const codigo = String(body.codigo ?? "").trim();
+
+  if (!/^\d{6,12}$/.test(codigo)) {
+    return NextResponse.json(
+      { error: "El código de matrícula debe ser numérico (6 a 12 dígitos)." },
       { status: 400 },
     );
   }
@@ -62,7 +99,7 @@ export async function GET(request: NextRequest) {
     );
   }
   if (resp.status === 404) {
-    return NextResponse.json({ error: `Código de matrícula '${codigo}' no encontrado (404).` }, { status: 404 });
+    return NextResponse.json({ error: `Código de matrícula '${codigo}' no encontrado.` }, { status: 404 });
   }
   if (!resp.ok) {
     return NextResponse.json({ error: `La API respondió con error HTTP ${resp.status}.` }, { status: 502 });
@@ -90,9 +127,12 @@ export async function GET(request: NextRequest) {
   const escuela = (data["Programa facultad"] || "").trim();
   const facultad = facultadDeEscuela(escuela);
 
+  const correoInstitucional = (data["Correo Institucional"] || "").trim();
+
   return NextResponse.json({
     nombresApellidos,
     dni: (data["Dni"] || "").trim(),
+    correoInstitucional: correoInstitucional.toLowerCase().endsWith("@undac.edu.pe") ? correoInstitucional : "",
     facultad,
     escuela,
     domicilio: (data["Domicilio"] || "").trim(),

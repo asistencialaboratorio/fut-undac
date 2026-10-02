@@ -51,3 +51,19 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* La vista previa se imprime como una hoja A4 completa, sin márgenes del
+   navegador (la hoja trae los suyos). */
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    height: auto !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+  }
+}

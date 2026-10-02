@@ -24,7 +24,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Constancia de matrícula",
     solicito: "CONSTANCIA DE MATRÍCULA",
     sumilla: "Solicito constancia de matrícula del periodo académico {periodo}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Recibo de pago por derecho de constancia, copia de DNI",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -58,7 +58,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Constancia de egresado / tercio-quinto superior",
     solicito: "CONSTANCIA DE EGRESADO",
     sumilla: "Solicito constancia de egresado y/o ubicación en tercio/quinto superior.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Récord académico, copia de DNI",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -117,7 +117,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Convalidación de cursos",
     solicito: "CONVALIDACIÓN DE ASIGNATURAS",
     sumilla: "Solicito convalidación de asignaturas cursadas en {universidad_origen}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Sílabos, certificado de estudios, récord académico, recibo de pago",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -135,7 +135,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Reserva de matrícula",
     solicito: "RESERVA DE MATRÍCULA",
     sumilla: "Solicito reserva de matrícula correspondiente al periodo académico {periodo}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Documento sustentatorio del motivo (médico, laboral, etc.), copia de DNI",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -153,7 +153,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Rectificación de notas",
     solicito: "RECTIFICACIÓN DE NOTAS",
     sumilla: "Solicito rectificación de nota en el curso de {curso}, periodo {periodo}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Copia del acta o registro de notas, evidencia del error (de ser el caso)",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -171,7 +171,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Carta de presentación (prácticas pre-profesionales)",
     solicito: "CARTA DE PRESENTACIÓN",
     sumilla: "Solicito carta de presentación para realizar prácticas pre-profesionales en {institucion_practicas}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Solicitud o requerimiento de la empresa/institución, copia de DNI",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -184,11 +184,11 @@ export const CATALOGO: Record<string, Tramite> = {
     camposExtra: ["institucion_practicas"],
   },
 
-  designacion_asesor_practicas: {
-    nombre: "Designación de asesor de prácticas pre-profesionales",
-    solicito: "DESIGNACIÓN DE ASESOR DE PRÁCTICAS PRE-PROFESIONALES",
-    sumilla: "Solicito la designación de asesor de prácticas pre-profesionales a realizar en {institucion_practicas}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+  designacion_supervisor_practicas: {
+    nombre: "Designación de supervisor de prácticas pre-profesionales",
+    solicito: "DESIGNACIÓN DE SUPERVISOR DE PRÁCTICAS PRE-PROFESIONALES",
+    sumilla: "Solicito la designación de supervisor de prácticas pre-profesionales a realizar en {institucion_practicas}.",
+    destinatario: "Sr./Sra. Director(a) de la Escuela Profesional de {escuela}",
     anexoSugerido: "Carta de aceptación de la institución, copia de la carta de presentación, copia de DNI",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -196,7 +196,7 @@ export const CATALOGO: Record<string, Tramite> = {
       "la aceptación de {institucion_practicas} para realizar sus prácticas " +
       "pre-profesionales, conforme se acredita con la carta de aceptación " +
       "adjunta, solicita se sirva designar al docente que fungirá como " +
-      "ASESOR DE PRÁCTICAS, a fin de dar cumplimiento a los requisitos " +
+      "SUPERVISOR DE PRÁCTICAS, a fin de dar cumplimiento a los requisitos " +
       "académicos establecidos en el Reglamento de Prácticas " +
       "Pre-Profesionales.\n\n" +
       "Por lo expuesto, solicito acceder a mi pedido por ser de justicia.",
@@ -212,7 +212,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Devolución de documentos",
     solicito: "DEVOLUCIÓN DE DOCUMENTOS",
     sumilla: "Solicito devolución de documentos personales presentados en expediente de {motivo_expediente}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Copia del cargo de presentación original, copia de DNI",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -245,7 +245,7 @@ export const CATALOGO: Record<string, Tramite> = {
     nombre: "Subsanación de actas",
     solicito: "SUBSANACIÓN DE ACTA",
     sumilla: "Solicito subsanación de omisión/error en acta del curso {curso}, periodo {periodo}.",
-    destinatario: "Sr./Sra. Decano(a) de la Facultad de {facultad}",
+    destinatario: "Sr./Sra. Decano(a) de la {facultad_completa}",
     anexoSugerido: "Copia de acta observada, documentación sustentatoria",
     fundamentacionPlantilla:
       "Que, el suscrito, identificado con código de matrícula {codigo}, " +
@@ -324,7 +324,7 @@ export const ICONOS: Record<string, string> = {
   reserva_matricula: "📅",
   rectificacion_notas: "✏️",
   carta_presentacion: "📄",
-  designacion_asesor_practicas: "🧑‍🏫",
+  designacion_supervisor_practicas: "🧑‍🏫",
   devolucion_documentos: "📦",
   duplicado_carne: "🪪",
   subsanacion_actas: "📝",

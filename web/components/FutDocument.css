@@ -1,190 +1,324 @@
-.fut-page {
-  position: relative;
+/* Hoja A4 fija (210 x 297 mm) con la disposición del formulario oficial FUT
+   de la UNDAC. Todas las medidas internas están en em, ligadas al tamaño
+   base --s, para que el ajuste automático pueda reducir la letra cuando el
+   texto no cabe (igual que el modo compacto del Word). La fundamentación
+   absorbe el espacio sobrante para que el documento llene toda la hoja.
+   Se usan colores hex (no oklch) para que html2canvas pueda capturarla. */
+
+.fut-hoja-area {
   width: 100%;
-  max-width: 850px;
-  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+}
+
+.fut-escala-wrap {
+  position: relative;
+}
+
+.fut-escala {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+}
+
+.fut-sombra {
+  box-shadow: 0 2px 14px rgba(15, 23, 42, 0.22);
+}
+
+.fut-page {
+  --s: 1;
+  --lh: 1.9em;
+  /* Renglón punteado: un punto de 1px cada 2px, al pie de cada línea de texto. */
+  --punteado: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2' height='24' viewBox='0 0 2 24' preserveAspectRatio='none'%3E%3Crect y='23' width='1' height='1' fill='%23000'/%3E%3C/svg%3E");
+  position: relative;
+  width: 210mm;
+  height: 297mm;
   background: #ffffff;
-  color: #111;
+  color: #000000;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 13px;
-  line-height: 1.35;
-  padding: 28px 34px 40px;
-  box-sizing: border-box;
+  font-size: calc(10.5pt * var(--s));
+  line-height: 1.22;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+.fut-marco {
+  position: absolute;
+  inset: 6mm;
+  border: 1px solid #000000;
+  pointer-events: none;
+  z-index: 2;
 }
 
 .fut-watermark {
   position: absolute;
-  top: 30%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 60%;
-  max-width: 420px;
-  opacity: 0.16;
+  top: calc(50% - 5.75cm);
+  left: calc(50% - 5.75cm);
+  width: 11.5cm;
+  height: 11.5cm;
   pointer-events: none;
-  z-index: 0;
+  user-select: none;
+}
+
+.fut-inner {
+  position: absolute;
+  top: 1.5cm;
+  bottom: 1.3cm;
+  left: 2.2cm;
+  right: 2.2cm;
+  overflow: hidden;
+  z-index: 1;
 }
 
 .fut-content {
-  position: relative;
-  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.fut-content > * {
+  flex: 0 0 auto;
+}
+
+.fut-content > .fut-fundamentacion {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(var(--lh) * 4 + 1.6em);
 }
 
 .fut-header {
   display: flex;
   align-items: center;
-  gap: 16px;
-  border-bottom: 3px solid #000;
-  padding-bottom: 10px;
-  margin-bottom: 14px;
+  gap: 0.9em;
+  padding-bottom: 0.3em;
 }
 
 .fut-header img {
-  width: 56px;
-  height: 64px;
+  width: 3.5em;
+  height: 4.1em;
   object-fit: contain;
   flex-shrink: 0;
 }
 
-.fut-header-titulo {
+.fut-titulo {
   flex: 1;
   text-align: center;
 }
 
-.fut-header-titulo h1 {
-  font-size: 17px;
-  font-weight: 800;
+.fut-titulo h1 {
   margin: 0;
-  letter-spacing: 0.2px;
+  font-size: 1.3em;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.fut-header-titulo h2 {
-  font-size: 14px;
-  font-weight: 700;
-  margin: 2px 0 0;
+.fut-titulo h2 {
+  margin: 0.1em 0 0;
+  font-size: 1.2em;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.fut-linea-titulo {
+  border-bottom: 1.5pt solid #000000;
+  margin: 0.2em 0 0.9em;
+}
+
+/* Renglones punteados: uno por línea de texto, y al menos --n líneas. */
+.fut-reglado {
+  line-height: var(--lh);
+  min-height: calc(var(--lh) * var(--n, 1));
+  background-image: var(--punteado);
+  background-size: 2px var(--lh);
+  background-position: 0 -0.3em;
+  background-repeat: repeat;
 }
 
 .fut-solicito {
-  text-align: right;
-  margin-bottom: 10px;
+  width: 56%;
+  margin-left: auto;
 }
 
-.fut-solicito .linea {
-  border-bottom: 1px dotted #000;
-  padding-bottom: 2px;
-  margin-bottom: 4px;
-  min-height: 1.1em;
-}
-
-.fut-solicito b {
+.fut-sumilla-etq {
+  margin: 0.1em 0 0 42%;
   font-weight: 700;
+  font-size: 0.9em;
 }
 
 .fut-campo {
-  margin-bottom: 8px;
+  margin-top: 0.62em;
 }
 
 .fut-valor {
-  border-bottom: 1px dotted #000;
-  min-height: 1.15em;
-  padding-bottom: 2px;
-  white-space: pre-wrap;
+  border-bottom: 1px dotted #000000;
+  padding-top: 0.5em;
+  padding-bottom: 0.1em;
+  min-height: 1.82em;
+  box-sizing: border-box;
 }
 
 .fut-etiqueta {
   font-weight: 700;
-  font-size: 12px;
-  margin-top: 2px;
+  margin-top: 0.15em;
 }
 
-.fut-fila-doble {
+.fut-doble,
+.fut-doble-etiquetas {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
+  grid-template-columns: 52% 1fr;
 }
 
-.fut-fila-triple {
+.fut-doble {
+  border-bottom: 1px dotted #000000;
+  padding-top: 0.5em;
+  padding-bottom: 0.1em;
+  min-height: 1.82em;
+  box-sizing: border-box;
+}
+
+.fut-doble-etiquetas {
+  font-weight: 700;
+  margin-top: 0.15em;
+}
+
+.fut-tres {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0 16px;
+  grid-template-columns: 0.85fr 0.9em 1.35fr 0.9em 0.8fr;
+  align-items: end;
+}
+
+.fut-celda {
+  border-bottom: 1px dotted #000000;
+  padding-top: 0.5em;
+  padding-bottom: 0.1em;
+  min-height: 1.82em;
+  box-sizing: border-box;
+}
+
+.fut-barra {
+  padding-bottom: 0.1em;
+  text-align: center;
+}
+
+.fut-tres-etq {
+  font-weight: 700;
+  margin-top: 0.15em;
+}
+
+.fut-content > .fut-fundamentacion {
+  margin-top: 1em;
 }
 
 .fut-fundamentacion .fut-etiqueta {
-  margin-bottom: 4px;
+  margin: 0 0 0.2em;
 }
 
-.fut-fundamentacion .fut-valor {
-  border-bottom: none;
-  min-height: 3.5em;
+.fut-fundamentacion .fut-reglado {
+  flex: 1 1 auto;
 }
 
-.fut-anexo-fecha {
+.fut-cierre {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0 24px;
-  margin-bottom: 8px;
+  grid-template-columns: 52% 1fr;
+  column-gap: 1.2em;
+  margin-top: 0.6em;
 }
 
 .fut-firma {
-  margin-bottom: 14px;
+  margin-top: 0.7em;
 }
 
-.fut-separador {
-  border: none;
-  border-top: 1px solid #000;
-  margin: 10px 0 10px;
+.fut-igual {
+  margin: 0.7em 0 0.5em;
+  font-size: 0.76em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.fut-talon {
+  font-size: 0.86em;
 }
 
 .fut-talon-fila {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0 16px;
-  border-bottom: 1px dotted #000;
-  padding-bottom: 2px;
-  margin-bottom: 6px;
-  font-size: 12px;
+  grid-template-columns: 1fr 36%;
+  column-gap: 1.2em;
 }
 
-.fut-talon-fila b {
-  font-weight: 700;
-}
-
-.fut-talon-triple-valor {
-  border-bottom: 1px dotted #000;
-  padding-bottom: 2px;
-  margin-bottom: 2px;
-  font-size: 12px;
-  min-height: 1.1em;
-}
-
-.fut-talon-triple-etiqueta {
-  font-weight: 700;
-  font-size: 10.5px;
+.fut-talon .fut-tres-etq {
+  font-size: 0.9em;
   text-align: center;
 }
 
-.fut-footer-actions {
-  margin: 18px auto 0;
-  max-width: 850px;
-  display: flex;
-  gap: 10px;
-  justify-content: center;
+/* ── Edición en la hoja ─────────────────────────────────────── */
+.fut-edit {
+  outline: none;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: text;
+  border-radius: 2px;
+}
+
+.fut-edit.fut-block {
+  display: block;
+}
+
+.fut-edit.fut-inline {
+  display: inline-block;
+  min-width: 1.5em;
+  vertical-align: baseline;
+}
+
+.fut-edit.fut-flujo {
+  display: inline;
+}
+
+.fut-editable .fut-edit:hover {
+  background: rgba(26, 86, 219, 0.08);
+}
+
+.fut-editable .fut-edit:focus {
+  background: rgba(26, 86, 219, 0.12);
+  box-shadow: 0 0 0 1px #1a56db;
+}
+
+.fut-page:not(.capturando) .fut-edit:empty::before {
+  content: attr(data-ph);
+  color: #9ca3af;
+  font-weight: 400;
 }
 
 @media print {
-  .no-print {
-    display: none !important;
+  .fut-escala-wrap {
+    width: auto !important;
+    height: auto !important;
   }
-  .fut-page {
+
+  .fut-escala {
+    position: static !important;
+    transform: none !important;
+  }
+
+  .fut-sombra {
     box-shadow: none !important;
-    max-width: 100% !important;
-    padding: 0.6cm 1cm !important;
   }
-  @page {
-    size: letter;
-    margin: 0.8cm;
+
+  .fut-page {
+    height: 296mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
-  body {
-    background: #fff !important;
+
+  .fut-page .fut-edit:empty::before {
+    content: none !important;
+  }
+
+  .fut-page .fut-edit:hover,
+  .fut-page .fut-edit:focus {
+    background: none !important;
+    box-shadow: none !important;
   }
 }

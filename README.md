@@ -185,12 +185,11 @@ ningún otro archivo del sistema.
 El wizard puede autocompletar tus datos personales consultando la API
 institucional por código de matrícula (`core/api_undac.py`).
 
-**⚠️ Aviso importante:** la API devuelve un campo llamado
-`"Correo Institucional"` que en realidad contiene el correo
-**personal** del estudiante (error conocido de la API). Por eso el
-sistema **nunca** usa ese valor automáticamente como correo
-institucional — lo guarda aparte como `correo_personal_detectado` y
-siempre te pide el correo institucional real por separado.
+La API devuelve el correo institucional y el personal por separado. El
+correo institucional se autocompleta solo si termina en
+`@undac.edu.pe` (por si la API vuelve a devolver un correo personal en
+ese campo). La URL de la API lleva tokens, así que se configura con la
+variable `UNDAC_API_BASE_URL` (ver `.env.example`).
 
 ---
 

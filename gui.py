@@ -97,7 +97,7 @@ ICONOS = {
     "reserva_matricula":       "📅",
     "rectificacion_notas":     "✏️",
     "carta_presentacion":      "📄",
-    "designacion_asesor_practicas": "🧑‍🏫",
+    "designacion_supervisor_practicas": "🧑‍🏫",
     "devolucion_documentos":   "📦",
     "duplicado_carne":         "🪪",
     "subsanacion_actas":       "📝",
@@ -1069,7 +1069,8 @@ class AppFUT(tk.Tk):
         mapeo = {"nombres_apellidos": info["nombres_apellidos"],
                  "dni": info["dni"], "codigo": codigo,
                  "facultad": info["facultad"], "escuela": info["escuela"],
-                 "domicilio": info["domicilio"]}
+                 "domicilio": info["domicilio"],
+                 "correo": info["correo_institucional"]}
         for k, v in mapeo.items():
             if k in self._campos_widgets and v:
                 self._campos_widgets[k].set(v)
@@ -1206,11 +1207,11 @@ class AppFUT(tk.Tk):
                             fg=C_VERDE)
                     self.after(0, _aplicar)
                 except BedrockError as e:
-                    self.after(0, lambda: self._lbl_ia_fund.config(
-                        text=f"✗ {str(e)[:90]}", fg=C_ROJO))
+                    msg = f"✗ {str(e)[:90]}"
+                    self.after(0, lambda: self._lbl_ia_fund.config(text=msg, fg=C_ROJO))
                 except Exception as e:
-                    self.after(0, lambda: self._lbl_ia_fund.config(
-                        text=f"✗ Error: {str(e)[:70]}", fg=C_ROJO))
+                    msg = f"✗ Error: {str(e)[:70]}"
+                    self.after(0, lambda: self._lbl_ia_fund.config(text=msg, fg=C_ROJO))
 
             threading.Thread(target=_tarea, daemon=True).start()
 
@@ -1446,7 +1447,8 @@ class AppFUT(tk.Tk):
                 salida = generar_documentos(self.fut_generado, tuple(formatos))
                 self.after(0, lambda: self._generar_ok(salida))
             except Exception as e:
-                self.after(0, lambda: self._generar_error(str(e)))
+                msg = str(e)
+                self.after(0, lambda: self._generar_error(msg))
 
         threading.Thread(target=_tarea, daemon=True).start()
 

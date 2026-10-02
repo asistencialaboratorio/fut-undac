@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { descargarBlob, descargarPdfDesdeHoja } from "@/lib/pdf-cliente";
 import { CATALOGO, FRECUENTES, ICONOS, listarTramites } from "@/lib/catalogo";
 import { CAMPOS_CONFIG } from "@/lib/campos";
 import { listarFacultades, listarEscuelas } from "@/lib/facultades";
 import { validarCampo } from "@/lib/validadores";
 import { construirFut } from "@/lib/constructor";
 import { sugerirTramites } from "@/lib/sugeridor";
-import FutDocument from "./FutDocument";
+import FutDocument, { HojaA4, type CampoEditable } from "./FutDocument";
 import Sidebar from "./Sidebar";
 import SectionHeader from "./SectionHeader";
 import Button from "./Button";
@@ -59,8 +60,6 @@ export default function Wizard() {
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState<ReturnType<typeof sugerirTramites>>([]);
   const [buscado, setBuscado] = useState(false);
-  const [descargando, setDescargando] = useState(false);
-  const [errorDescarga, setErrorDescarga] = useState("");
 
   // ── Autocompletar con la API institucional de la UNDAC ──
   const [codApi, setCodApi] = useState("");
@@ -103,13 +102,18 @@ export default function Wizard() {
     setConsultando(true);
     setEstadoApi({ texto: "⏳ Consultando...", tipo: "info" });
     try {
-      const resp = await fetch(`/api/consultar-estudiante?codigo=${encodeURIComponent(codigo)}`);
+      const resp = await fetch("/api/consultar-estudiante", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codigo }),
+      });
       const info = await resp.json();
       if (!resp.ok) throw new Error(info.error || "Error desconocido");
       setDatos((d) => ({
         ...d,
         nombres_apellidos: info.nombresApellidos || d.nombres_apellidos,
         dni: info.dni || d.dni,
+        correo: info.correoInstitucional || d.correo,
         codigo,
         facultad: info.facultad || d.facultad,
         escuela: info.escuela || d.escuela,
@@ -171,47 +175,13 @@ export default function Wizard() {
     return construirFut(claveTramite, { ...datos, fundamentacion });
   }, [claveTramite, datos, fundamentacion]);
 
-  async function descargarWord() {
-    if (!claveTramite) return;
-    setDescargando(true);
-    setErrorDescarga("");
-    try {
-      const resp = await fetch("/api/generar-docx", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          claveTramite,
-          datos: { ...datos, fundamentacion },
-          nombreArchivo: nombreArchivo(datos.nombres_apellidos || "", claveTramite),
-        }),
-      });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "Error desconocido" }));
-        throw new Error(err.error || "No se pudo generar el documento.");
-      }
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${nombreArchivo(datos.nombres_apellidos || "", claveTramite)}.docx`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      setErrorDescarga(e instanceof Error ? e.message : "Error desconocido");
-    } finally {
-      setDescargando(false);
-    }
-  }
-
   function irANav(clave: string) {
     void clave;
     setPaso("inicio");
   }
 
   return (
-    <div className="flex min-h-screen bg-bg-main">
+    <div className="flex min-h-screen bg-bg-main print:block print:min-h-0">
       <Sidebar onNav={irANav} />
       <div className="flex-1 min-w-0">
         {paso === "inicio" && (
@@ -254,11 +224,8 @@ export default function Wizard() {
 
         {paso === "vista_previa" && futFinal && (
           <PantallaVistaPrevia
-            fut={futFinal}
+            futInicial={futFinal}
             onEditar={() => setPaso("fundamentacion")}
-            onDescargar={descargarWord}
-            descargando={descargando}
-            errorDescarga={errorDescarga}
             onNuevo={() => {
               setClaveTramite(null);
               setDatos({});
@@ -439,7 +406,8 @@ function PantallaFormulario({
             )}
           </div>
           <p className="text-[10px] text-suave mt-1 mb-2.5">
-            El sistema consulta la API de UNDAC y completa tu nombre, DNI, facultad y domicilio automáticamente.
+            El sistema consulta la API de UNDAC y completa tu nombre, DNI, correo institucional, facultad,
+            escuela y domicilio automáticamente.
           </p>
           <div className="flex gap-2">
             <input
@@ -447,6 +415,7 @@ function PantallaFormulario({
               value={codApi}
               onChange={(e) => setCodApi(e.target.value)}
               placeholder="Código de matrícula"
+              inputMode="numeric"
             />
             <Button variant="primary" onClick={consultarApi} disabled={consultando}>
               🔍 Consultar API
@@ -643,50 +612,111 @@ function PantallaFundamentacion({
 
 // ── Pantalla 4: Vista previa ──────────────────────────────────
 function PantallaVistaPrevia({
-  fut,
+  futInicial,
   onEditar,
-  onDescargar,
-  descargando,
-  errorDescarga,
   onNuevo,
 }: {
-  fut: ReturnType<typeof construirFut>;
+  futInicial: ReturnType<typeof construirFut>;
   onEditar: () => void;
-  onDescargar: () => void;
-  descargando: boolean;
-  errorDescarga: string;
   onNuevo: () => void;
 }) {
+  const [fut, setFut] = useState(futInicial);
+  const [ocupado, setOcupado] = useState<"word" | "pdf" | null>(null);
+  const [error, setError] = useState("");
+  const [desborda, setDesborda] = useState(false);
+
+  function editarCampo(campo: CampoEditable, valor: string) {
+    setFut((f) => ({ ...f, [campo]: valor }));
+  }
+
+  function nombreBase() {
+    return nombreArchivo(fut.nombresApellidos, fut.tramiteClave);
+  }
+
+  async function descargarWord() {
+    setOcupado("word");
+    setError("");
+    try {
+      const resp = await fetch("/api/generar-docx", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fut, nombreArchivo: nombreBase() }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "" }));
+        throw new Error(err.error || "No se pudo generar el documento.");
+      }
+      descargarBlob(await resp.blob(), `${nombreBase()}.docx`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setOcupado(null);
+    }
+  }
+
+  async function descargarPdf() {
+    const hoja = document.getElementById("fut-document");
+    if (!hoja) return;
+    (document.activeElement as HTMLElement | null)?.blur();
+    setOcupado("pdf");
+    setError("");
+    try {
+      await descargarPdfDesdeHoja(hoja, `${nombreBase()}.pdf`);
+    } catch (e) {
+      setError(`No se pudo generar el PDF: ${e instanceof Error ? e.message : "error desconocido"}`);
+    } finally {
+      setOcupado(null);
+    }
+  }
+
+  function imprimir() {
+    (document.activeElement as HTMLElement | null)?.blur();
+    window.print();
+  }
+
   return (
     <>
-      <div className="no-print">
-        <SectionHeader titulo="👁 Vista previa del FUT" subtitulo="Revisa que todo esté correcto antes de descargar o imprimir" />
+      <div className="print:hidden">
+        <SectionHeader titulo="👁 Vista previa del FUT" subtitulo="Revisa tu documento, edítalo si hace falta y descárgalo o imprímelo" />
         <div className="px-6 pt-4">
           <Pasos actual={3} />
         </div>
       </div>
 
-      <div className="no-print px-6 pb-4 flex items-center gap-2 flex-wrap">
-        <button onClick={onEditar} className="text-suave text-[12px] font-bold px-2">
-          ← Editar
-        </button>
-        <Button variant="primary" onClick={onDescargar} disabled={descargando}>
-          {descargando ? "Generando..." : "⬇ Descargar Word (.docx)"}
-        </Button>
-        <Button variant="success" onClick={() => window.print()}>
-          🖨 Imprimir / Guardar PDF
-        </Button>
-        <span className="text-[10px] text-hint">Nada se guarda en el servidor.</span>
-      </div>
-      {errorDescarga && <p className="no-print px-6 text-[11px] text-rojo mb-3">{errorDescarga}</p>}
-
-      <div className="px-6 pb-10">
-        <div className="shadow-md border border-borde-card">
-          <FutDocument fut={fut} />
+      <div className="print:hidden sticky top-0 z-20 bg-bg-main px-6 pb-3 pt-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button onClick={onEditar} className="text-suave text-[12px] font-bold px-2">
+            ← Editar
+          </button>
+          <Button variant="primary" onClick={descargarWord} disabled={ocupado !== null}>
+            {ocupado === "word" ? "Generando Word..." : "⬇ Descargar Word"}
+          </Button>
+          <Button variant="primary" onClick={descargarPdf} disabled={ocupado !== null}>
+            {ocupado === "pdf" ? "Generando PDF..." : "⬇ Descargar PDF"}
+          </Button>
+          <Button variant="success" onClick={imprimir} disabled={ocupado !== null}>
+            🖨 Imprimir
+          </Button>
         </div>
+        <p className="text-[10px] text-hint mt-1.5">
+          ✏️ Haz clic sobre cualquier texto de la hoja para editarlo; los cambios se reflejan en el Word, el PDF y la
+          impresión. Nada se guarda en el servidor.
+        </p>
+        {desborda && (
+          <p className="text-[11px] text-naranja mt-1">
+            ⚠ El texto no cabe en una hoja A4 ni reduciendo la letra al mínimo. Acórtalo para que se imprima completo.
+          </p>
+        )}
+        {error && <p className="text-[11px] text-rojo mt-1">{error}</p>}
       </div>
 
-      <div className="no-print px-6 pb-10 text-center">
+      <div className="px-6 pb-6 print:p-0">
+        <HojaA4>
+          <FutDocument fut={fut} onChange={editarCampo} onDesborde={setDesborda} />
+        </HojaA4>
+      </div>
+
+      <div className="print:hidden px-6 pb-10 text-center">
         <button onClick={onNuevo} className="text-azul text-[12px] font-bold">
           + Nuevo trámite
         </button>

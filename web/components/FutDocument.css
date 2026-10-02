@@ -43,14 +43,6 @@
   box-sizing: border-box;
 }
 
-.fut-marco {
-  position: absolute;
-  inset: 6mm;
-  border: 1px solid #000000;
-  pointer-events: none;
-  z-index: 2;
-}
-
 .fut-watermark {
   position: absolute;
   top: calc(50% - 5.75cm);

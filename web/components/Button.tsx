@@ -1,27 +1,31 @@
-import { ButtonHTMLAttributes } from "react";
+import { ButtonHTMLAttributes, ReactNode } from "react";
 
 type Variante = "primary" | "secondary" | "gold" | "danger" | "success";
 
 const ESTILOS: Record<Variante, string> = {
-  primary: "bg-azul hover:bg-azul-h text-white",
+  primary: "bg-azul-osc hover:bg-sb-bg text-white border border-transparent",
   secondary: "bg-bg-card hover:bg-bg-input text-cuerpo border border-borde",
-  gold: "bg-dorado hover:bg-dorado-h text-white",
-  danger: "bg-rojo hover:bg-red-700 text-white",
-  success: "bg-verde hover:bg-emerald-800 text-white",
+  gold: "bg-dorado hover:bg-dorado-h text-white border border-transparent",
+  danger: "bg-rojo hover:bg-red-700 text-white border border-transparent",
+  success: "bg-verde hover:bg-emerald-800 text-white border border-transparent",
 };
 
 export default function Button({
   variant = "primary",
   className = "",
+  icono,
+  iconoDer,
   children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variante }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variante; icono?: ReactNode; iconoDer?: ReactNode }) {
   return (
     <button
       {...props}
-      className={`font-bold text-[11px] px-[18px] py-[9px] rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${ESTILOS[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-2 font-semibold text-[12px] px-[16px] py-[8px] rounded-sm transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${ESTILOS[variant]} ${className}`}
     >
+      {icono}
       {children}
+      {iconoDer}
     </button>
   );
 }

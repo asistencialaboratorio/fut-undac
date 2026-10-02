@@ -26,6 +26,13 @@ export function validarCelular(valor: string): string {
   return v;
 }
 
+// Si solo escribieron el usuario del correo (sin "@"), se completa con el
+// dominio institucional.
+export function completarCorreo(valor: string): string {
+  const v = valor.trim();
+  return v && !v.includes("@") ? `${v}@undac.edu.pe` : v;
+}
+
 export function validarCorreo(valor: string): string {
   const v = valor.trim();
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {

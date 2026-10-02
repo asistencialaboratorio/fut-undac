@@ -314,20 +314,3 @@ export const FRECUENTES = [
   "convalidacion",
 ];
 
-export const ICONOS: Record<string, string> = {
-  constancia_matricula: "📋",
-  constancia_no_adeudar: "✅",
-  constancia_egresado: "🎓",
-  traslado_interno: "🔄",
-  traslado_externo: "🚀",
-  convalidacion: "📚",
-  reserva_matricula: "📅",
-  rectificacion_notas: "✏️",
-  carta_presentacion: "📄",
-  designacion_supervisor_practicas: "🧑‍🏫",
-  devolucion_documentos: "📦",
-  duplicado_carne: "🪪",
-  subsanacion_actas: "📝",
-  exoneracion_primeros_puestos: "🏆",
-  otro: "⚙️",
-};

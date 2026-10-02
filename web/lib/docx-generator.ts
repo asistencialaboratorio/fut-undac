@@ -2,7 +2,7 @@
 // de Word ni LibreOffice — usa la librería `docx` (generación directa del
 // formato OOXML). Sigue la misma disposición que la hoja de la vista previa
 // (components/FutDocument.tsx), que replica el formulario oficial de la UNDAC:
-// marco de página, renglones punteados, valor sobre la línea y etiqueta
+// renglones punteados, valor sobre la línea y etiqueta
 // numerada debajo, y talón de cargo al final. Ocupa una hoja A4 completa.
 
 import fs from "fs";
@@ -28,8 +28,6 @@ import {
   TabStopType,
   LineRuleType,
   TableLayoutType,
-  PageBorderDisplay,
-  PageBorderOffsetFrom,
   convertMillimetersToTwip,
 } from "docx";
 import { FutData } from "./constructor";
@@ -332,13 +330,6 @@ export async function generarDocxFut(fut: FutData): Promise<Buffer> {
           page: {
             size: { width: CM(21), height: CM(29.7) },
             margin: { top: CM(1.5), bottom: CM(1.3), left: CM(2.2), right: CM(2.2), header: 0, footer: 0 },
-            borders: {
-              pageBorders: { display: PageBorderDisplay.ALL_PAGES, offsetFrom: PageBorderOffsetFrom.PAGE },
-              pageBorderTop: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 17 },
-              pageBorderBottom: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 17 },
-              pageBorderLeft: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 17 },
-              pageBorderRight: { style: BorderStyle.SINGLE, size: 6, color: "000000", space: 17 },
-            },
           },
         },
         children: [

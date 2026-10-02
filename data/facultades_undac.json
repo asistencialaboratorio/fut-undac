@@ -1,0 +1,82 @@
+{
+  "_fuente": "https://undac.edu.pe/explorar-facultades (y ficha de cada facultad en undac.edu.pe/facultades/...)",
+  "_actualizado": "2026-09-30",
+  "facultades": [
+    {
+      "facultad": "Facultad de Ingeniería",
+      "escuelas": [
+        "Ingeniería Civil",
+        "Ingeniería de Sistemas y Computación",
+        "Ingeniería Geológica",
+        "Ingeniería Metalúrgica",
+        "Ingeniería Ambiental"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ingeniería de Minas",
+      "escuelas": [
+        "Ingeniería de Minas"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ciencias de la Salud",
+      "escuelas": [
+        "Enfermería",
+        "Obstetricia"
+      ]
+    },
+    {
+      "facultad": "Facultad de Medicina Humana",
+      "escuelas": [
+        "Medicina Humana"
+      ]
+    },
+    {
+      "facultad": "Facultad de Odontología",
+      "escuelas": [
+        "Odontología"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ciencias Económicas y Contables",
+      "escuelas": [
+        "Contabilidad",
+        "Economía"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ciencias Empresariales",
+      "escuelas": [
+        "Administración"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ciencias de la Educación",
+      "escuelas": [
+        "Educación Inicial",
+        "Educación Primaria",
+        "Educación Secundaria"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ciencias de la Comunicación",
+      "escuelas": [
+        "Ciencias de la Comunicación"
+      ]
+    },
+    {
+      "facultad": "Facultad de Derecho y Ciencias Políticas",
+      "escuelas": [
+        "Derecho"
+      ]
+    },
+    {
+      "facultad": "Facultad de Ciencias Agropecuarias",
+      "escuelas": [
+        "Agronomía",
+        "Zootecnia",
+        "Industrias Alimentarias - La Merced"
+      ]
+    }
+  ]
+}

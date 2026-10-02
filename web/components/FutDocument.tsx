@@ -230,7 +230,6 @@ export default function FutDocument({
     <div ref={paginaRef} className="fut-page fut-editable" id="fut-document">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src="/img/undac_watermark.png" alt="" className="fut-watermark" />
-      <div className="fut-marco" />
       <div className="fut-inner">
         <div ref={contenidoRef} className="fut-content">
           <div className="fut-header">

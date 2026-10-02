@@ -2,18 +2,23 @@
 
 import { useMemo, useState } from "react";
 import { descargarBlob, descargarPdfDesdeHoja } from "@/lib/pdf-cliente";
-import { CATALOGO, FRECUENTES, ICONOS, listarTramites } from "@/lib/catalogo";
+import { ArrowLeft, ArrowRight, Check, Download, Eye, Info, Pencil, PencilLine, Plus, Printer, RefreshCw, Save, Search, TriangleAlert, X } from "lucide-react";
+import { CATALOGO, FRECUENTES, listarTramites } from "@/lib/catalogo";
+import { IconoTramite } from "./Iconos";
 import { CAMPOS_CONFIG } from "@/lib/campos";
 import { listarFacultades, listarEscuelas } from "@/lib/facultades";
-import { validarCampo } from "@/lib/validadores";
-import { construirFut } from "@/lib/constructor";
+import { completarCorreo, validarCampo } from "@/lib/validadores";
+import { construirFut, type FutData } from "@/lib/constructor";
+import { agregarAlHistorial, cargarPerfil, guardarPerfil } from "@/lib/almacen";
 import { sugerirTramites } from "@/lib/sugeridor";
 import FutDocument, { HojaA4, type CampoEditable } from "./FutDocument";
-import Sidebar from "./Sidebar";
+import Sidebar, { NavMovil, type SeccionNav } from "./Sidebar";
+import Campo from "./Campo";
+import { PantallaAyuda, PantallaMisDatos, PantallaMisTramites } from "./PantallasExtra";
 import SectionHeader from "./SectionHeader";
 import Button from "./Button";
 
-type Paso = "inicio" | "formulario" | "fundamentacion" | "vista_previa";
+type Paso = SeccionNav | "formulario" | "fundamentacion" | "vista_previa";
 
 const ETIQUETAS_EXTRA: Record<string, string> = {
   periodo: "Periodo académico",
@@ -60,6 +65,8 @@ export default function Wizard() {
   const [busqueda, setBusqueda] = useState("");
   const [sugerencias, setSugerencias] = useState<ReturnType<typeof sugerirTramites>>([]);
   const [buscado, setBuscado] = useState(false);
+  const [futAbierto, setFutAbierto] = useState<FutData | null>(null);
+  const [claveVista, setClaveVista] = useState(0);
 
   // ── Autocompletar con la API institucional de la UNDAC ──
   const [codApi, setCodApi] = useState("");
@@ -71,7 +78,9 @@ export default function Wizard() {
 
   function elegirTramite(clave: string) {
     setClaveTramite(clave);
+    setFutAbierto(null);
     setErrores({});
+    setDatos((d) => (Object.keys(d).length ? d : cargarPerfil()));
     setPaso("formulario");
   }
 
@@ -100,7 +109,7 @@ export default function Wizard() {
       return;
     }
     setConsultando(true);
-    setEstadoApi({ texto: "⏳ Consultando...", tipo: "info" });
+    setEstadoApi({ texto: "Consultando...", tipo: "info" });
     try {
       const resp = await fetch("/api/consultar-estudiante", {
         method: "POST",
@@ -120,9 +129,9 @@ export default function Wizard() {
         domicilio: info.domicilio || d.domicilio,
       }));
       const nombre = info.nombresApellidos ? String(info.nombresApellidos).split(" ").pop() : "";
-      setEstadoApi({ texto: `✓ Datos de ${nombre} cargados`, tipo: "ok" });
+      setEstadoApi({ texto: `Datos de ${nombre} cargados`, tipo: "ok" });
     } catch (e) {
-      setEstadoApi({ texto: `✗ ${e instanceof Error ? e.message : "Error desconocido"}`, tipo: "error" });
+      setEstadoApi({ texto: `${e instanceof Error ? e.message : "Error desconocido"}`, tipo: "error" });
     } finally {
       setConsultando(false);
     }
@@ -132,8 +141,11 @@ export default function Wizard() {
     if (!claveTramite) return false;
     const tramite = CATALOGO[claveTramite];
     const nuevosErrores: Record<string, string> = {};
+    const correo = completarCorreo(datos.correo || "");
+    if (correo !== (datos.correo || "")) setDatos((d) => ({ ...d, correo }));
+    const dat: Record<string, string> = { ...datos, correo };
     for (const campo of CAMPOS_CONFIG) {
-      const valor = (datos[campo.clave] || "").trim();
+      const valor = (dat[campo.clave] || "").trim();
       if (campo.obligatorio && !valor) {
         nuevosErrores[campo.clave] = "Obligatorio";
         continue;
@@ -145,7 +157,7 @@ export default function Wizard() {
     }
     const opcionales = new Set(tramite.camposExtraOpcionales ?? []);
     for (const campo of tramite.camposExtra) {
-      if (!opcionales.has(campo) && !(datos[campo] || "").trim()) {
+      if (!opcionales.has(campo) && !(dat[campo] || "").trim()) {
         nuevosErrores[campo] = "Obligatorio";
       }
     }
@@ -175,15 +187,25 @@ export default function Wizard() {
     return construirFut(claveTramite, { ...datos, fundamentacion });
   }, [claveTramite, datos, fundamentacion]);
 
-  function irANav(clave: string) {
-    void clave;
+  function irANav(seccion: SeccionNav) {
+    setPaso(seccion);
+  }
+
+  function nuevoTramite() {
+    setClaveTramite(null);
+    setFutAbierto(null);
+    setDatos({});
     setPaso("inicio");
   }
 
+  const seccionActiva: SeccionNav = paso === "tramites" || paso === "datos" || paso === "ayuda" ? paso : "inicio";
+  const futVista = futAbierto ?? futFinal;
+
   return (
     <div className="flex min-h-screen bg-bg-main print:block print:min-h-0">
-      <Sidebar onNav={irANav} />
+      <Sidebar activo={seccionActiva} onNav={irANav} />
       <div className="flex-1 min-w-0">
+        <NavMovil activo={seccionActiva} onNav={irANav} />
         {paso === "inicio" && (
           <PantallaInicio
             busqueda={busqueda}
@@ -207,6 +229,7 @@ export default function Wizard() {
             estadoApi={estadoApi}
             consultando={consultando}
             consultarApi={consultarApi}
+            onGuardarDatos={() => guardarPerfil(datos)}
             onVolver={() => setPaso("inicio")}
             onContinuar={irAFundamentacion}
           />
@@ -218,21 +241,37 @@ export default function Wizard() {
             setFundamentacion={setFundamentacion}
             textoSugerido={textoFundamentacionSugerido}
             onVolver={() => setPaso("formulario")}
-            onContinuar={() => setPaso("vista_previa")}
-          />
-        )}
-
-        {paso === "vista_previa" && futFinal && (
-          <PantallaVistaPrevia
-            futInicial={futFinal}
-            onEditar={() => setPaso("fundamentacion")}
-            onNuevo={() => {
-              setClaveTramite(null);
-              setDatos({});
-              setPaso("inicio");
+            onContinuar={() => {
+              setFutAbierto(null);
+              setPaso("vista_previa");
             }}
           />
         )}
+
+        {paso === "vista_previa" && futVista && (
+          <PantallaVistaPrevia
+            key={claveVista}
+            futInicial={futVista}
+            onEditar={() => setPaso(futAbierto ? "tramites" : "fundamentacion")}
+            onNuevo={nuevoTramite}
+            onGenerado={agregarAlHistorial}
+          />
+        )}
+
+        {paso === "tramites" && (
+          <PantallaMisTramites
+            onAbrir={(fut) => {
+              setFutAbierto(fut);
+              setClaveVista((n) => n + 1);
+              setPaso("vista_previa");
+            }}
+            onNuevo={nuevoTramite}
+          />
+        )}
+
+        {paso === "datos" && <PantallaMisDatos onNuevo={nuevoTramite} />}
+
+        {paso === "ayuda" && <PantallaAyuda onNuevo={nuevoTramite} />}
       </div>
     </div>
   );
@@ -260,9 +299,9 @@ function PantallaInicio({
     <>
       <SectionHeader titulo="¿Qué trámite necesitas hoy?" subtitulo="Selecciona el tipo de documento que deseas generar" />
       <div className="px-6 py-5">
-        <div className="bg-bg-card border border-borde rounded p-3 mb-5">
+        <div className="bg-bg-card border border-borde rounded-sm p-3 mb-5">
           <div className="flex items-center gap-2">
-            <span className="text-suave text-[13px]">🔍</span>
+            <Search size={15} strokeWidth={1.75} className="text-suave" />
             <input
               className="flex-1 bg-transparent text-[12px] outline-none text-titulo placeholder:text-hint"
               placeholder="Describe lo que necesitas (ej: 'se me perdió mi carné')..."
@@ -272,8 +311,8 @@ function PantallaInicio({
             />
           </div>
           <div className="mt-2 flex items-center gap-3">
-            <Button variant="gold" onClick={buscar}>
-              🔍 Sugerir trámite
+            <Button variant="gold" onClick={buscar} icono={<Search size={14} />}>
+              Sugerir trámite
             </Button>
             <span className="text-[10px] text-hint">o selecciona directamente abajo</span>
           </div>
@@ -289,25 +328,27 @@ function PantallaInicio({
                 <button
                   key={s.clave}
                   onClick={() => elegirTramite(s.clave)}
-                  className={`text-left px-3 py-2 rounded text-[12px] font-bold ${
-                    i === 0 ? "bg-azul hover:bg-azul-h text-white" : "bg-bg-input text-cuerpo hover:bg-borde"
+                  className={`flex items-center gap-2 text-left px-3 py-2 rounded-sm text-[12px] font-semibold ${
+                    i === 0 ? "bg-azul-osc hover:bg-sb-bg text-white" : "bg-bg-input text-cuerpo hover:bg-borde"
                   }`}
                 >
-                  {ICONOS[s.clave] ?? "📄"} {s.nombre} →
+                  <IconoTramite clave={s.clave} size={16} />
+                  <span className="flex-1">{s.nombre}</span>
+                  <ArrowRight size={14} />
                 </button>
               ))}
             </div>
           )}
         </div>
 
-        <DividerLabel texto="⭐  Trámites Frecuentes" />
+        <DividerLabel texto="Trámites frecuentes" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-6">
           {FRECUENTES.map((clave) => (
             <TarjetaTramite key={clave} clave={clave} esFrecuente onClick={() => elegirTramite(clave)} />
           ))}
         </div>
 
-        <DividerLabel texto="📋  Todos los Trámites" />
+        <DividerLabel texto="Todos los trámites" />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {resto.map((t) => (
             <TarjetaTramite key={t.clave} clave={t.clave} onClick={() => elegirTramite(t.clave)} />
@@ -319,7 +360,7 @@ function PantallaInicio({
 }
 
 function DividerLabel({ texto }: { texto: string }) {
-  return <div className="text-[11px] font-bold text-suave mb-2.5 mt-1">{texto}</div>;
+  return <div className="text-[10px] font-semibold uppercase tracking-widest text-suave mb-2.5 mt-1">{texto}</div>;
 }
 
 function TarjetaTramite({
@@ -335,18 +376,23 @@ function TarjetaTramite({
   return (
     <button
       onClick={onClick}
-      className="group flex items-stretch text-left bg-bg-card border border-borde-card rounded-none hover:border-azul transition-colors overflow-hidden"
+      className="group flex items-stretch text-left bg-bg-card border border-borde rounded-sm hover:border-azul-osc transition-colors overflow-hidden"
     >
-      <span className={`w-1 shrink-0 ${esFrecuente ? "bg-dorado" : "bg-azul-osc"}`} />
-      <span className="flex-1 px-3.5 py-3 group-hover:bg-[#eef2ff] transition-colors">
+      <span className="flex-1 px-4 py-3.5">
         <span className="flex items-center justify-between">
-          <span className="text-lg">{ICONOS[clave] ?? "📄"}</span>
+          <span className="w-8 h-8 flex items-center justify-center border border-borde rounded-sm text-azul-osc group-hover:border-azul-osc">
+            <IconoTramite clave={clave} size={17} />
+          </span>
           {esFrecuente && (
-            <span className="text-[9px] font-bold bg-[#fef3c7] text-[#92400e] px-1 py-0.5 rounded">★ Frecuente</span>
+            <span className="text-[9px] font-semibold uppercase tracking-wider text-dorado-h border border-dorado px-1.5 py-0.5 rounded-sm">
+              Frecuente
+            </span>
           )}
         </span>
-        <span className="block text-[12px] font-bold text-titulo mt-1.5">{t.nombre}</span>
-        <span className="block text-right text-[13px] text-hint group-hover:text-azul mt-1">→</span>
+        <span className="block text-[12.5px] font-semibold text-titulo mt-2.5 leading-snug">{t.nombre}</span>
+        <span className="flex justify-end mt-1.5 text-hint group-hover:text-azul-osc">
+          <ArrowRight size={14} />
+        </span>
       </span>
     </button>
   );
@@ -363,6 +409,7 @@ function PantallaFormulario({
   estadoApi,
   consultando,
   consultarApi,
+  onGuardarDatos,
   onVolver,
   onContinuar,
 }: {
@@ -375,32 +422,37 @@ function PantallaFormulario({
   estadoApi: { texto: string; tipo: "info" | "ok" | "error" } | null;
   consultando: boolean;
   consultarApi: () => void;
+  onGuardarDatos: () => boolean;
   onVolver: () => void;
   onContinuar: () => void;
 }) {
+  const [guardado, setGuardado] = useState("");
   const tramite = CATALOGO[claveTramite];
   const escuelasDisponibles = listarEscuelas(datos.facultad) ?? [];
 
   return (
     <>
       <SectionHeader
-        titulo={`${ICONOS[claveTramite] ?? "📄"}  ${tramite.nombre}`}
+        titulo={tramite.nombre}
+        icono={<IconoTramite clave={claveTramite} />}
         subtitulo="Paso 1 de 3 — Completa tus datos personales"
-        btnLabel="← Cambiar trámite"
+        btnLabel="Cambiar trámite"
         onBtn={onVolver}
       />
       <div className="px-6 py-5 max-w-3xl">
         <Pasos actual={1} />
 
-        <div className="bg-bg-card border border-borde rounded p-4 mb-5">
+        <div className="bg-bg-card border border-borde rounded-sm p-4 mb-5">
           <div className="flex items-center justify-between">
-            <span className="text-[12px] font-bold text-titulo">🔍  Autocompletar con código de matrícula</span>
+            <span className="flex items-center gap-2 text-[12px] font-semibold text-titulo"><Search size={14} strokeWidth={1.75} className="text-azul-osc" />Autocompletar con código de matrícula</span>
             {estadoApi && (
               <span
-                className={`text-[10px] font-medium ${
+                className={`inline-flex items-center gap-1 text-[10px] font-medium ${
                   estadoApi.tipo === "ok" ? "text-verde" : estadoApi.tipo === "error" ? "text-rojo" : "text-suave"
                 }`}
               >
+                {estadoApi.tipo === "ok" && <Check size={12} />}
+                {estadoApi.tipo === "error" && <X size={12} />}
                 {estadoApi.texto}
               </span>
             )}
@@ -411,20 +463,36 @@ function PantallaFormulario({
           </p>
           <div className="flex gap-2">
             <input
-              className="border border-borde rounded px-2.5 py-1.5 text-[12px] w-44"
+              className="border border-borde rounded-sm px-2.5 py-1.5 text-[12px] w-44"
               value={codApi}
               onChange={(e) => setCodApi(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !consultando) consultarApi();
+              }}
               placeholder="Código de matrícula"
               inputMode="numeric"
             />
-            <Button variant="primary" onClick={consultarApi} disabled={consultando}>
-              🔍 Consultar API
+            <Button variant="primary" onClick={consultarApi} disabled={consultando} icono={<Search size={14} />}>
+              Consultar
             </Button>
           </div>
         </div>
 
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
+          <Button
+            variant="secondary"
+            icono={<Save size={14} />}
+            onClick={() =>
+              setGuardado(onGuardarDatos() ? "Guardados en este navegador; se completarán solos la próxima vez." : "No se pudo guardar.")
+            }
+          >
+            Guardar mis datos para próximos trámites
+          </Button>
+          {guardado && <span className="text-[10px] text-suave">{guardado}</span>}
+        </div>
+
         <DividerLabel texto="Datos Personales" />
-        <div className="bg-bg-card border border-borde rounded p-5 space-y-4">
+        <div className="bg-bg-card border border-borde rounded-sm p-5 space-y-4">
           {CAMPOS_CONFIG.map((campo) => (
             <Campo
               key={campo.clave}
@@ -470,11 +538,12 @@ function PantallaFormulario({
         </div>
 
         <div className="flex justify-between mt-5 pb-8">
-          <button onClick={onVolver} className="text-suave text-[12px] font-bold">
-            ← Cambiar trámite
+          <button onClick={onVolver} className="inline-flex items-center gap-1.5 text-suave text-[12px] font-semibold">
+            <ArrowLeft size={14} />
+            Cambiar trámite
           </button>
-          <Button variant="primary" onClick={onContinuar}>
-            Continuar →
+          <Button variant="primary" onClick={onContinuar} iconoDer={<ArrowRight size={14} />}>
+            Continuar
           </Button>
         </div>
       </div>
@@ -489,8 +558,8 @@ function Pasos({ actual }: { actual: 1 | 2 | 3 }) {
       {pasos.map((p, i) => (
         <span key={p} className="flex items-center gap-1.5">
           <span
-            className={`px-2 py-1 rounded text-[10px] font-bold ${
-              i + 1 === actual ? "bg-azul text-white" : "bg-borde text-suave"
+            className={`px-2.5 py-1 rounded-sm text-[10px] font-semibold ${
+              i + 1 === actual ? "bg-azul-osc text-white" : "bg-borde text-suave"
             }`}
           >
             {i + 1}. {p}
@@ -498,59 +567,6 @@ function Pasos({ actual }: { actual: 1 | 2 | 3 }) {
           {i < 2 && <span className="text-hint text-[10px]">›</span>}
         </span>
       ))}
-    </div>
-  );
-}
-
-function Campo({
-  clave,
-  etiqueta,
-  obligatorio,
-  placeholder,
-  ayuda,
-  error,
-  valor,
-  onChange,
-  opciones,
-}: {
-  clave: string;
-  etiqueta: string;
-  obligatorio: boolean;
-  placeholder: string;
-  ayuda: string;
-  error?: string;
-  valor: string;
-  onChange: (v: string) => void;
-  opciones?: string[];
-}) {
-  const esArea = clave === "domicilio" || clave === "fundamentacion_libre";
-  const claseBase = `w-full border rounded px-2.5 py-2 text-[12px] bg-bg-card focus:outline-none focus:border-borde-focus ${
-    error ? "border-rojo" : "border-borde"
-  }`;
-  return (
-    <div>
-      <label className="block text-[11px] font-bold text-titulo mb-1">
-        {etiqueta} {obligatorio && <span className="text-rojo">*</span>}
-      </label>
-      {opciones ? (
-        <select className={claseBase} value={valor} onChange={(e) => onChange(e.target.value)}>
-          <option value="">-- Selecciona --</option>
-          {opciones.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-      ) : esArea ? (
-        <textarea className={claseBase} placeholder={placeholder} value={valor} onChange={(e) => onChange(e.target.value)} />
-      ) : (
-        <input className={claseBase} placeholder={placeholder} value={valor} onChange={(e) => onChange(e.target.value)} />
-      )}
-      {error ? (
-        <p className="text-[10px] text-rojo mt-1">{error}</p>
-      ) : ayuda ? (
-        <p className="text-[10px] text-hint mt-1">{ayuda}</p>
-      ) : null}
     </div>
   );
 }
@@ -572,36 +588,39 @@ function PantallaFundamentacion({
   return (
     <>
       <SectionHeader
-        titulo="✍️ Fundamentación del pedido"
+        titulo="Fundamentación del pedido"
+        icono={<PencilLine size={18} strokeWidth={1.75} />}
         subtitulo="Paso 2 de 3 — Revisa o edita el texto legal generado automáticamente"
-        btnLabel="← Volver"
+        btnLabel="Volver"
         onBtn={onVolver}
       />
       <div className="px-6 py-5 max-w-3xl">
         <Pasos actual={2} />
 
-        <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded p-3 mb-4">
-          <p className="text-[11px] text-[#1e40af]">
-            💡 El texto legal fue generado con tus datos. Puedes usarlo tal cual o editarlo libremente.
+        <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-sm p-3 mb-4">
+          <p className="flex items-center gap-2 text-[11px] text-[#1e40af]">
+            <Info size={14} className="shrink-0" />
+            El texto legal fue generado con tus datos. Puedes usarlo tal cual o editarlo libremente.
           </p>
         </div>
 
         <textarea
-          className="w-full border border-borde rounded p-4 text-[12px] min-h-[220px] bg-bg-card focus:outline-none focus:border-borde-focus"
+          className="w-full border border-borde rounded-sm p-4 text-[12px] min-h-[220px] bg-bg-card focus:outline-none focus:border-borde-focus"
           value={fundamentacion}
           onChange={(e) => setFundamentacion(e.target.value)}
         />
 
         <div className="flex justify-between mt-5 pb-8">
-          <button onClick={onVolver} className="text-suave text-[12px] font-bold">
-            ← Volver
+          <button onClick={onVolver} className="inline-flex items-center gap-1.5 text-suave text-[12px] font-semibold">
+            <ArrowLeft size={14} />
+            Volver
           </button>
           <div className="flex gap-2">
-            <Button variant="secondary" onClick={() => setFundamentacion(textoSugerido)}>
-              🔄 Regenerar
+            <Button variant="secondary" onClick={() => setFundamentacion(textoSugerido)} icono={<RefreshCw size={14} />}>
+              Regenerar
             </Button>
-            <Button variant="primary" onClick={onContinuar}>
-              Vista previa →
+            <Button variant="primary" onClick={onContinuar} iconoDer={<ArrowRight size={14} />}>
+              Vista previa
             </Button>
           </div>
         </div>
@@ -615,10 +634,12 @@ function PantallaVistaPrevia({
   futInicial,
   onEditar,
   onNuevo,
+  onGenerado,
 }: {
   futInicial: ReturnType<typeof construirFut>;
   onEditar: () => void;
   onNuevo: () => void;
+  onGenerado: (fut: FutData) => void;
 }) {
   const [fut, setFut] = useState(futInicial);
   const [ocupado, setOcupado] = useState<"word" | "pdf" | null>(null);
@@ -647,6 +668,7 @@ function PantallaVistaPrevia({
         throw new Error(err.error || "No se pudo generar el documento.");
       }
       descargarBlob(await resp.blob(), `${nombreBase()}.docx`);
+      onGenerado(fut);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error desconocido");
     } finally {
@@ -662,6 +684,7 @@ function PantallaVistaPrevia({
     setError("");
     try {
       await descargarPdfDesdeHoja(hoja, `${nombreBase()}.pdf`);
+      onGenerado(fut);
     } catch (e) {
       setError(`No se pudo generar el PDF: ${e instanceof Error ? e.message : "error desconocido"}`);
     } finally {
@@ -671,13 +694,14 @@ function PantallaVistaPrevia({
 
   function imprimir() {
     (document.activeElement as HTMLElement | null)?.blur();
+    onGenerado(fut);
     window.print();
   }
 
   return (
     <>
       <div className="print:hidden">
-        <SectionHeader titulo="👁 Vista previa del FUT" subtitulo="Revisa tu documento, edítalo si hace falta y descárgalo o imprímelo" />
+        <SectionHeader icono={<Eye size={18} strokeWidth={1.75} />} titulo="Vista previa del FUT" subtitulo="Revisa tu documento, edítalo si hace falta y descárgalo o imprímelo" />
         <div className="px-6 pt-4">
           <Pasos actual={3} />
         </div>
@@ -685,26 +709,29 @@ function PantallaVistaPrevia({
 
       <div className="print:hidden sticky top-0 z-20 bg-bg-main px-6 pb-3 pt-1">
         <div className="flex items-center gap-2 flex-wrap">
-          <button onClick={onEditar} className="text-suave text-[12px] font-bold px-2">
-            ← Editar
+          <button onClick={onEditar} className="inline-flex items-center gap-1.5 text-suave text-[12px] font-semibold px-2">
+            <ArrowLeft size={14} />
+            Editar
           </button>
-          <Button variant="primary" onClick={descargarWord} disabled={ocupado !== null}>
-            {ocupado === "word" ? "Generando Word..." : "⬇ Descargar Word"}
+          <Button variant="primary" onClick={descargarWord} disabled={ocupado !== null} icono={<Download size={14} />}>
+            {ocupado === "word" ? "Generando Word..." : "Descargar Word"}
           </Button>
-          <Button variant="primary" onClick={descargarPdf} disabled={ocupado !== null}>
-            {ocupado === "pdf" ? "Generando PDF..." : "⬇ Descargar PDF"}
+          <Button variant="primary" onClick={descargarPdf} disabled={ocupado !== null} icono={<Download size={14} />}>
+            {ocupado === "pdf" ? "Generando PDF..." : "Descargar PDF"}
           </Button>
-          <Button variant="success" onClick={imprimir} disabled={ocupado !== null}>
-            🖨 Imprimir
+          <Button variant="secondary" onClick={imprimir} disabled={ocupado !== null} icono={<Printer size={14} />}>
+            Imprimir
           </Button>
         </div>
-        <p className="text-[10px] text-hint mt-1.5">
-          ✏️ Haz clic sobre cualquier texto de la hoja para editarlo; los cambios se reflejan en el Word, el PDF y la
+        <p className="flex items-start gap-1.5 text-[10px] text-hint mt-1.5">
+          <Pencil size={11} className="mt-px shrink-0" />
+          Haz clic sobre cualquier texto de la hoja para editarlo; los cambios se reflejan en el Word, el PDF y la
           impresión. Nada se guarda en el servidor.
         </p>
         {desborda && (
-          <p className="text-[11px] text-naranja mt-1">
-            ⚠ El texto no cabe en una hoja A4 ni reduciendo la letra al mínimo. Acórtalo para que se imprima completo.
+          <p className="flex items-center gap-1.5 text-[11px] text-naranja mt-1">
+            <TriangleAlert size={13} className="shrink-0" />
+            El texto no cabe en una hoja A4 ni reduciendo la letra al mínimo. Acórtalo para que se imprima completo.
           </p>
         )}
         {error && <p className="text-[11px] text-rojo mt-1">{error}</p>}
@@ -717,8 +744,9 @@ function PantallaVistaPrevia({
       </div>
 
       <div className="print:hidden px-6 pb-10 text-center">
-        <button onClick={onNuevo} className="text-azul text-[12px] font-bold">
-          + Nuevo trámite
+        <button onClick={onNuevo} className="inline-flex items-center gap-1.5 text-azul-osc text-[12px] font-semibold">
+          <Plus size={14} />
+          Nuevo trámite
         </button>
       </div>
     </>

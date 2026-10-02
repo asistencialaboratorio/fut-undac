@@ -1,15 +1,29 @@
-# FUT-UNDAC — Asistente CLI para el Formulario Único de Trámite
+# FUT-UNDAC — Generador del Formulario Único de Trámite
 
-Sistema de línea de comandos que automatiza la creación del FUT
-(Formulario Único de Trámite) de la Universidad Nacional Daniel Alcides
-Carrión (UNDAC), pensado para estudiantes que no saben cómo redactar
-estos documentos formales.
+Genera el FUT (Formulario Único de Trámite) de la Universidad Nacional
+Daniel Alcides Carrión (UNDAC) para estudiantes que no saben cómo redactar
+estos documentos formales, replicando el formato oficial. Hay dos versiones
+en este repositorio:
 
-Genera el documento final en **Word (.docx)** y/o **PDF**, replicando
-fielmente el formato oficial (logo, líneas punteadas, numeración de
-campos, talón de recepción).
+| Carpeta | Qué es | Cómo usarla |
+|---|---|---|
+| [`web/`](web/) | **Aplicación web** (Next.js): wizard, hoja A4 editable, descarga en Word/PDF e impresión. | Ver [web/README.md](web/README.md). Se despliega en Vercel con *Root Directory* = `web`. |
+| raíz (`main.py`, `gui.py`, `core/`, `data/`) | **Versión de escritorio y consola** (Python): GUI, wizard de consola y modo experto. | Instrucciones abajo. |
+
+## Publicación
+
+1. Sube el repositorio a GitHub (los archivos con claves, como `.env`, están
+   en `.gitignore`).
+2. En Vercel: *Add New → Project*, importa el repositorio y configura
+   **Root Directory = `web`** y **Framework Preset = Next.js**.
+3. En *Settings → Environment Variables* agrega `UNDAC_API_BASE_URL` (ver
+   `web/.env.example`) y vuelve a desplegar.
+
+La versión de escritorio usa su propio `.env` (ver `.env.example` en la raíz).
 
 ---
+
+# Versión de escritorio / consola (Python)
 
 ## Instalación
 
@@ -17,7 +31,6 @@ Requisitos: Python 3.9+, LibreOffice (solo si quieres generar PDF; el
 .docx no lo necesita).
 
 ```bash
-cd fut_cli
 pip install -r requirements.txt
 ```
 
@@ -34,14 +47,14 @@ pip install pyinstaller
 
 # En Linux/Mac (separador ":"):
 pyinstaller --onefile --name fut-undac \
-  --add-data "data/undac_logo.jpg:data" \
+  --add-data "data:data" \
   --hidden-import rich \
   --console \
   main.py
 
 # En Windows (separador ";", desde PowerShell o CMD):
 pyinstaller --onefile --name fut-undac ^
-  --add-data "data/undac_logo.jpg;data" ^
+  --add-data "data;data" ^
   --hidden-import rich ^
   --console ^
   main.py
@@ -196,7 +209,8 @@ variable `UNDAC_API_BASE_URL` (ver `.env.example`).
 ## Arquitectura del proyecto
 
 ```
-fut_cli/
+fut_project/
+├── web/                    # Aplicación web (Next.js), ver web/README.md
 ├── main.py                 # CLI principal (argparse + subcomandos)
 ├── test_api.py              # Script de diagnóstico de la API de UNDAC
 ├── data/

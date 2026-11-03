@@ -121,12 +121,10 @@ export default function Wizard() {
       setDatos((d) => ({
         ...d,
         nombres_apellidos: info.nombresApellidos || d.nombres_apellidos,
-        dni: info.dni || d.dni,
         correo: info.correoInstitucional || d.correo,
         codigo,
         facultad: info.facultad || d.facultad,
         escuela: info.escuela || d.escuela,
-        domicilio: info.domicilio || d.domicilio,
       }));
       const nombre = info.nombresApellidos ? String(info.nombresApellidos).split(" ").pop() : "";
       setEstadoApi({ texto: `Datos de ${nombre} cargados`, tipo: "ok" });
@@ -458,8 +456,8 @@ function PantallaFormulario({
             )}
           </div>
           <p className="text-[10px] text-suave mt-1 mb-2.5">
-            El sistema consulta la API de UNDAC y completa tu nombre, DNI, correo institucional, facultad,
-            escuela y domicilio automáticamente.
+            El sistema consulta la API de UNDAC y completa tu nombre, correo institucional, facultad y
+            escuela automáticamente. El DNI y el domicilio se escriben a mano.
           </p>
           <div className="flex gap-2">
             <input

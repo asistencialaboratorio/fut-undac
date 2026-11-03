@@ -12,7 +12,7 @@ import { facultadDeEscuela } from "@/lib/facultades";
 //
 // La URL completa (incluye tokens de acceso propios de la API) se toma de
 // una variable de entorno para no dejarla fija en el código público.
-// Configúrala en Vercel/Netlify (Environment Variables) o en .env.local
+// Configúrala en Vercel (Environment Variables) o en .env.local
 // para desarrollo; ver .env.example.
 const BASE_URL = process.env.UNDAC_API_BASE_URL;
 
@@ -33,12 +33,11 @@ function excedeLimite(ip: string): boolean {
   return recientes.length > MAX_CONSULTAS;
 }
 
+// Vercel sobrescribe x-forwarded-for con la IP real, así que el cliente no
+// puede falsificarla. shortcut: solo es fiable detrás de Vercel; revisar esta
+// cabecera si se despliega en otro proveedor.
 function ipDelCliente(request: NextRequest): string {
-  return (
-    request.headers.get("x-nf-client-connection-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
-    "desconocida"
-  );
+  return request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "desconocida";
 }
 
 export async function POST(request: NextRequest) {
@@ -129,12 +128,12 @@ export async function POST(request: NextRequest) {
 
   const correoInstitucional = (data["Correo Institucional"] || "").trim();
 
+  // DNI y domicilio no se devuelven a propósito: bastaría un código de
+  // matrícula para obtenerlos. El estudiante los escribe a mano.
   return NextResponse.json({
     nombresApellidos,
-    dni: (data["Dni"] || "").trim(),
     correoInstitucional: correoInstitucional.toLowerCase().endsWith("@undac.edu.pe") ? correoInstitucional : "",
     facultad,
     escuela,
-    domicilio: (data["Domicilio"] || "").trim(),
   });
 }

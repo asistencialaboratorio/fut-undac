@@ -22,12 +22,12 @@ este repositorio (`main.py`, `gui.py`).
 - **Autocompletado por código de matrícula**
   (`app/api/consultar-estudiante/route.ts`, método `POST`): consulta la
   API institucional de UNDAC desde el servidor, para que el token de la
-  URL no llegue al navegador. Completa nombre, DNI, correo institucional,
-  facultad, escuela y domicilio. Como la ruta es pública, limita a 10
-  consultas por IP cada 10 minutos.
+  URL no llegue al navegador. Completa nombre, correo institucional,
+  facultad y escuela; DNI y domicilio no se devuelven a propósito y se
+  escriben a mano. Como la ruta es pública, limita a 10 consultas por IP
+  cada 10 minutos.
   Requiere la variable de entorno `UNDAC_API_BASE_URL` — ver abajo.
-  **Solo responde desde la red institucional de UNDAC** (wifi del campus
-  o VPN), así que fuera de esa red este paso falla de forma controlada y
+  Si la API de UNDAC no responde, este paso falla de forma controlada y
   el estudiante puede seguir llenando los datos a mano.
 - **Generación del documento** (`app/api/generar-docx/route.ts`): arma
   el `.docx` en memoria (`lib/docx-generator.ts`) a partir del FUT ya
@@ -61,16 +61,16 @@ cp .env.example .env.local
 
 ## Deploy en Vercel
 
-1. Importa este repositorio en Vercel.
-2. En **Settings → Environment Variables**, agrega `UNDAC_API_BASE_URL`
-   con el valor real.
+1. Importa este repositorio en Vercel y elige `web` como **Root Directory**.
+2. En **Environment Variables**, agrega `UNDAC_API_BASE_URL` con el valor
+   real.
 3. Deploy. `next.config.ts` ya incluye `outputFileTracingIncludes` para
    que las funciones serverless empaqueten el logo y la marca de agua de
    `public/img/`, necesarios para generar el `.docx`.
 
-Recuerda que el autocompletado por API solo funcionará para visitantes
-conectados a la red institucional de UNDAC, sin importar dónde esté
-desplegada la app.
+La consulta a la API de UNDAC sale desde los servidores de Vercel, no desde
+el equipo del visitante: si la API bloquea esas IP, el autocompletado falla
+para todos, aunque la app siga funcionando.
 
 ## Estructura
 
